@@ -47,8 +47,8 @@ async function obtenerEventosEntre(timeMin, timeMax) {
     return todosLosEventos;
 }
 
-async function enviarResumenMananaAPapa() {
-    console.log("Armando resumen de mañana para papá...");
+async function enviarResumenHoyAPapa() {
+    console.log("Armando resumen de hoy para papá...");
 
     const mananaInicio = new Date();
     mananaInicio.setDate(mananaInicio.getDate() + 1);
@@ -62,11 +62,11 @@ async function enviarResumenMananaAPapa() {
         const eventos = await obtenerEventosEntre(mananaInicio.toISOString(), mananaFin.toISOString());
 
         if (eventos.length === 0) {
-            await enviarWhatsApp(NUMERO_PAPA, "Hola! No hay visitas agendadas para mañana.");
+            await enviarWhatsApp(NUMERO_PAPA, "Hola! No hay visitas agendadas para hoy.");
             return;
         }
 
-        let resumen = "📅 *Resumen de visitas de mañana:*\n\n";
+        let resumen = "📅 *Resumen de visitas de hoy:*\n\n";
         for (const evento of eventos) {
             resumen += `• ${obtenerHoraEvento(evento)}: ${evento.summary}\n`;
         }
@@ -79,21 +79,21 @@ async function enviarResumenMananaAPapa() {
 }
 
 async function enviarRecordatoriosAClientes() {
-    console.log("Enviando recordatorios a clientes para mañana...");
+    console.log("Enviando recordatorios a clientes para hoy...");
 
     const mananaInicio = new Date();
-    mananaInicio.setDate(mananaInicio.getDate() + 1);
+    mananaInicio.setDate(mananaInicio.getDate());
     mananaInicio.setHours(0, 0, 0, 0);
 
     const mananaFin = new Date();
-    mananaFin.setDate(mananaFin.getDate() + 1);
+    mananaFin.setDate(mananaFin.getDate());
     mananaFin.setHours(23, 59, 59, 999);
 
     try {
         const eventos = await obtenerEventosEntre(mananaInicio.toISOString(), mananaFin.toISOString());
 
         if (eventos.length === 0) {
-            console.log("No hay clientes para avisar mañana.");
+            console.log("No hay clientes para avisar hoy.");
             return;
         }
 
@@ -140,13 +140,14 @@ async function enviarWhatsApp(numero, texto) {
     }
 }
 
-// A las 8:00 AM todos los días: resumen de mañana + recordatorios a clientes
+// A las 8:00 AM todos los días: resumen de hoy + recordatorios a clientes
 cron.schedule('0 8 * * *', async () => {
     await enviarRecordatoriosAClientes();
     await new Promise(resolve => setTimeout(resolve, 60000));
-    enviarResumenMananaAPapa();
+    enviarResumenHoyAPapa();
 }, {
     timezone: "America/Argentina/Buenos_Aires"
 });
 
-console.log("Bot activo. Enviará resumen y recordatorios a las 8:00 AM para los eventos de mañana.");
+
+console.log("Bot activo. Enviará resumen y recordatorios a las 8:00 AM para los eventos hoy.");
