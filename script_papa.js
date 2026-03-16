@@ -15,7 +15,10 @@ const auth = new google.auth.GoogleAuth({
 const calendar = google.calendar({ version: 'v3', auth });
 
 function filtrarEventosQueMostrar(eventos = []) {
-    return eventos.filter((evento) => evento.summary && evento.summary.toLowerCase().startsWith("mostrar"));
+    return eventos.filter((evento) => {
+        const summary = evento.summary?.toLowerCase();
+        return summary && (summary.startsWith("mostrar") || summary.startsWith("depto"));
+    });
 }
 
 function obtenerFechaInicioEvento(evento) {
@@ -32,6 +35,24 @@ function obtenerHoraEvento(evento) {
 }
 
 async function obtenerEventosEntre(timeMin, timeMax) {
+    const res = await Promise.all([
+        calendar.events.list({
+            calendarId: CALENDAR_ID_PAPA,
+            timeMin,
+            timeMax,
+            singleEvents: true,
+            orderBy: 'startTime',
+        }),
+    ]);
+
+    const eventos = res[0].data.items || [];
+    const todosLosEventos = filtrarEventosQueMostrar(eventos);
+
+    console.log(`Eventos encontrados: ${todosLosEventos.length}`);
+    return todosLosEventos;
+}
+
+async function obtenerEventosParaMostrar(timeMin, timeMax) {
     const res = await Promise.all([
         calendar.events.list({
             calendarId: CALENDAR_ID_PAPA,
@@ -68,9 +89,37 @@ async function enviarResumenHoyAPapa() {
             return;
         }
 
-        let resumen = "📅 *Resumen de visitas de hoy:*\n\n";
+        let resumen = "📅 *Resumen de eventos de hoy:*\n\n";
+
         for (const evento of eventos) {
-            resumen += `• ${obtenerHoraEvento(evento)}: ${evento.summary}\n`;
+            // 1. Ajuste de 3 horas (si obtenerHoraEvento no lo hace)
+            let fecha = new Date(evento.start.dateTime || evento.start.date);
+            fecha.setHours(fecha.getHours() - 3);
+
+            // Usamos una función simple para formatear HH:mm
+            const horaAjustada = fecha.toLocaleTimeString('es-AR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+
+            const texto = evento.summary.toLowerCase();
+            let mensajeLinea = "";
+
+            // 2. Lógica de mensajes diferenciados
+            if (texto.startsWith("mostrar")) {
+                // Para los "Mostrar", mantenemos el estilo de visita
+                mensajeLinea = `🔑 *Visita:* ${evento.summary}`;
+            }
+            else if (texto.startsWith("depto")) {
+                // Para los "Depto", un estilo de gestión/mantenimiento
+                mensajeLinea = `🏠 *Gestión:* ${evento.summary}`;
+            }
+            else {
+                mensajeLinea = evento.summary;
+            }
+
+            resumen += `• ${horaAjustada}: ${mensajeLinea}\n`;
         }
 
         await enviarWhatsApp(NUMERO_PAPA, resumen);
@@ -92,7 +141,7 @@ async function enviarRecordatoriosAClientes() {
     mananaFin.setHours(23, 59, 59, 999);
 
     try {
-        const eventos = await obtenerEventosEntre(mananaInicio.toISOString(), mananaFin.toISOString());
+        const eventos = await obtenerEventosParaMostrar(mananaInicio.toISOString(), mananaFin.toISOString());
 
         if (eventos.length === 0) {
             console.log("No hay clientes para avisar hoy.");
@@ -149,6 +198,5 @@ cron.schedule('0 8 * * *', async () => {
 }, {
     timezone: "America/Argentina/Buenos_Aires"
 });
-
 
 console.log("Bot activo. Enviará resumen y recordatorios a las 8:00 AM para los eventos hoy.");
