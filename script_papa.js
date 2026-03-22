@@ -191,12 +191,6 @@ async function enviarWhatsApp(numero, texto) {
     }
 }
 
-// A las 8:00 AM todos los días: resumen de hoy + recordatorios a clientes
-cron.schedule('0 8 * * *', async () => {
-    enviarResumenHoyAPapa();
-    enviarRecordatoriosAClientes();
-}, {
-    timezone: "America/Argentina/Buenos_Aires"
-});
+enviarResumenHoyAPapa();
+enviarRecordatoriosAClientes();
 
-console.log("Bot activo. Enviará resumen y recordatorios a las 8:00 AM para los eventos hoy.");
