@@ -210,8 +210,8 @@ app.get('/accion', async (req, res) => {
 
 // Iniciamos el servidor web
 app.listen(PORT, '0.0.0.0', () => {
-    enviarRecordatoriosAClientes(); // Ejecutamos una vez al iniciar para pruebas rápidas
     console.log(`🚀 Servidor web escuchando en el puerto ${PORT}`);
     console.log("⏳ Cron job activado para las 8:00 AM (Hora Argentina)");
 });
+enviarRecordatoriosAClientes(); // Ejecutamos una vez al iniciar para pruebas rápidas
 
