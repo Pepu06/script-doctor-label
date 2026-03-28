@@ -142,7 +142,7 @@ async function enviarRecordatoriosAClientes() {
 
 async function enviarWhatsApp(numero, texto) {
     try {
-        await axios.post("https://www.wasenderapi.com/api/send-message", {
+        await axios.post("https://wasenderapi.com/api/send-message", {
             to: numero, text: texto
         }, { headers: { 'Authorization': `Bearer ${WASENDER_TOKEN_PAPA}`, 'Content-Type': 'application/json' } });
     } catch (error) {
